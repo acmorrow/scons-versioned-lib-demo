@@ -1,12 +1,18 @@
 Import('env')
 
 sources = [
-    'foo.cpp',
+    'hello.cpp',
+    'goodbye.cpp',
 ]
 
 headers = [
-    env.File('foo.hpp')
+    env.File('hello.hpp'),
+    env.File('goodbye.hpp'),
 ]
+
+env.AddPackageTag(
+    "libfoo-dev",
+    env.Install("$PREFIX/include", headers))
 
 sharedLibEnv = env.Clone(SHLIBVERSION='0.1.2')
 sharedLib = sharedLibEnv.SharedLibrary(
@@ -15,29 +21,23 @@ sharedLib = sharedLibEnv.SharedLibrary(
 )
 
 sharedLibInstall = sharedLibEnv.InstallVersionedLib("$PREFIX/lib", sharedLib)
-env.Tag(sharedLibInstall, PACKAGE="libfoo")
+# NOTE 1: The above gives me back a list containing a single node. That isn't helpful, since what I
+# really want to do here is to put the hard library file and the soname symlink into
+# 'package-libfoo', and the development symlink into package-libfoo-dev.
 
-headerInstall = env.Install("$PREFIX/include", headers)
-env.Tag(headerInstall, PACKAGE="libfoo-dev")
+env.AddPackageTag("libfoo", sharedLibInstall)
+# NOTE 3: This doesn't cause all of the files created by InstallVersionedLib to get tagged as
+# 'libfoo'.
 
-def FindInstalledFilesWithTag(env, tag):
-    files = env.FindInstalledFiles()
-    tagged = [f for f in files if hasattr(f, "PACKAGING_PACKAGE") and getattr(f, "PACKAGING_PACKAGE") == tag ]
-    return tagged
-env.AddMethod(FindInstalledFilesWithTag)
+env.Alias("packages", [
 
-packageLibFoo = env.Package(
-    source=env.FindInstalledFilesTagged("libfoo"),
-    NAME="libfoo",
-    VERSION="1.2.3",
-    PACKAGETYPE="targz")
+    env.Alias("package-libfoo", env.TaggedPackage(
+        "libfoo",
+        VERSION="1.2.3",
+        PACKAGETYPE="targz")),
 
-packageLibFooDev = env.Package(
-    source=env.FindInstalledFilesTagged("libfoo-dev"),
-    NAME="libfoodev",
-    VERSION="1.2.3",
-    PACKAGETYPE="targz")
-
-env.Alias("package-libfoo", packageLibFoo)
-env.Alias("package-libfoo-dev", packageLibFooDev)
-env.Alias("packages", [packageLibFoo, packageLibFooDev])
+    env.Alias("package-libfoo-dev", env.TaggedPackage(
+        "libfoo-dev",
+        VERSION="1.2.3",
+        PACKAGETYPE="targz")),
+])

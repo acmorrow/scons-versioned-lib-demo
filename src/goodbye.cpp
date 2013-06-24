@@ -1,4 +1,4 @@
-#include "bar.hpp"
+#include "goodbye.hpp"
 
 #include <ostream>
 
