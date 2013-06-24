@@ -26,8 +26,8 @@ sharedLibInstall = sharedLibEnv.InstallVersionedLib("$PREFIX/lib", sharedLib)
 # 'package-libfoo', and the development symlink into package-libfoo-dev.
 
 env.AddPackageTag("libfoo", sharedLibInstall)
-# NOTE 3: This doesn't cause all of the files created by InstallVersionedLib to get tagged as
-# 'libfoo'.
+# NOTE 3: The above doesn't cause all of the files created by InstallVersionedLib to get tagged
+# as 'libfoo'. I suspect this is the same problem as NOTE 1.
 
 env.Alias("packages", [
 
@@ -41,3 +41,15 @@ env.Alias("packages", [
         VERSION="1.2.3",
         PACKAGETYPE="targz")),
 ])
+# NOTE 4: The above package tarfiles are broken, in the sense that they contain the variant dir
+# and packaging prefix directory:
+#
+# > tar tvf build/libfoo-1.2.3.tar.gz
+# -rwxr-xr-x  0 andrew staff    8680 Jun 24 13:55 build/libfoo-1.2.3/<PREFIX>/lib/libfoo.0.1.2.dylib
+#
+# This means that if you tried to untar this, it would not untar to the PREFIX, but somewhere
+# else. This won't work if your goal is to produce tarfiles with /usr/local/... as the prefix.
+#
+# Furthermore, it really seems as if it ought to be possible to somehow tell the packaging
+# system to package from the prefix: e.g. if the packages are relocatable (e.g. use $ORIGIN or
+# similar), I might want to package without the entire PREFIX encoded.

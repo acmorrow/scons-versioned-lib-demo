@@ -21,7 +21,8 @@ def TaggedPackage(env, tag, **kwargs):
     # NOTE 2: You will see from this print that the dev-link gets printed as broken
     # characters. I think when you extend _INSTALLED_FILES you need to enclose in
     # brackets. However, even when you do that, you don't get consistent names with the other
-    # files, which all contain the complete install prefix.
+    # files, which all contain the complete install prefix, but the dev-link gets a relative
+    # prefix.
     for f in files:
         f_tags = hasattr(f, "PACKAGING_PACKAGE") and getattr(f, "PACKAGING_PACKAGE") or []
         print(str(f), f_tags)
