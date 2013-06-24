@@ -1,0 +1,43 @@
+Import('env')
+
+sources = [
+    'foo.cpp',
+]
+
+headers = [
+    env.File('foo.hpp')
+]
+
+sharedLibEnv = env.Clone(SHLIBVERSION='0.1.2')
+sharedLib = sharedLibEnv.SharedLibrary(
+    target='foo',
+    source=sources,
+)
+
+sharedLibInstall = sharedLibEnv.InstallVersionedLib("$PREFIX/lib", sharedLib)
+env.Tag(sharedLibInstall, PACKAGE="libfoo")
+
+headerInstall = env.Install("$PREFIX/include", headers)
+env.Tag(headerInstall, PACKAGE="libfoo-dev")
+
+def FindInstalledFilesWithTag(env, tag):
+    files = env.FindInstalledFiles()
+    tagged = [f for f in files if hasattr(f, "PACKAGING_PACKAGE") and getattr(f, "PACKAGING_PACKAGE") == tag ]
+    return tagged
+env.AddMethod(FindInstalledFilesWithTag)
+
+packageLibFoo = env.Package(
+    source=env.FindInstalledFilesTagged("libfoo"),
+    NAME="libfoo",
+    VERSION="1.2.3",
+    PACKAGETYPE="targz")
+
+packageLibFooDev = env.Package(
+    source=env.FindInstalledFilesTagged("libfoo-dev"),
+    NAME="libfoodev",
+    VERSION="1.2.3",
+    PACKAGETYPE="targz")
+
+env.Alias("package-libfoo", packageLibFoo)
+env.Alias("package-libfoo-dev", packageLibFooDev)
+env.Alias("packages", [packageLibFoo, packageLibFooDev])
